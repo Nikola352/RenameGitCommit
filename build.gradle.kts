@@ -45,3 +45,7 @@ tasks {
         token.set(System.getenv("PUBLISH_TOKEN"))
     }
 }
+
+intellij {
+    plugins.set(listOf("Git4Idea"))
+}
