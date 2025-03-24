@@ -12,9 +12,18 @@ import java.awt.Dimension
 import javax.swing.*
 import javax.swing.border.CompoundBorder
 
+
 class RenameCommitDialog(project: Project, lastCommitMessage: String) : DialogWrapper(project) {
 
-    private val textArea = JTextArea(lastCommitMessage, 5, 40).apply {
+    companion object {
+        const val MAX_COMMIT_MESSAGE_LENGTH = 72
+        const val DEFAULT_TEXT_AREA_ROWS = 5
+        const val DEFAULT_TEXT_AREA_COLUMNS = 40
+        const val DIALOG_WIDTH = 500
+        const val DIALOG_HEIGHT = 300
+    }
+
+    private val textArea = JTextArea(lastCommitMessage, DEFAULT_TEXT_AREA_ROWS, DEFAULT_TEXT_AREA_COLUMNS).apply {
         lineWrap = true
         wrapStyleWord = true
         border = BorderFactory.createCompoundBorder(
@@ -36,7 +45,7 @@ class RenameCommitDialog(project: Project, lastCommitMessage: String) : DialogWr
 
     override fun createCenterPanel(): JComponent {
         val mainPanel = JPanel(BorderLayout())
-        mainPanel.preferredSize = Dimension(500, 300)
+        mainPanel.preferredSize = Dimension(DIALOG_WIDTH, DIALOG_HEIGHT)
 
         // Warning Panel
         val warningPanel = JPanel().apply {
@@ -98,8 +107,8 @@ class RenameCommitDialog(project: Project, lastCommitMessage: String) : DialogWr
     override fun doValidate(): ValidationInfo? {
         return if (textArea.text.isBlank()) {
             ValidationInfo("Commit message cannot be empty", textArea)
-        } else if (textArea.text.length > 72) {
-            ValidationInfo("Commit message should be 72 characters or less", textArea)
+        } else if (textArea.text.length > MAX_COMMIT_MESSAGE_LENGTH) {
+            ValidationInfo("Commit message should be $MAX_COMMIT_MESSAGE_LENGTH characters or less", textArea)
         } else {
             null
         }
