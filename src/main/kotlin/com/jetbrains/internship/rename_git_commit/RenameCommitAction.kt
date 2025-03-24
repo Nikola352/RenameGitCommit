@@ -1,5 +1,6 @@
 package com.jetbrains.internship.rename_git_commit
 
+import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.progress.ProgressManager
@@ -11,6 +12,15 @@ import git4idea.repo.GitRepository
 import javax.swing.SwingUtilities
 
 class RenameCommitAction : AnAction() {
+
+    override fun getActionUpdateThread(): ActionUpdateThread {
+        return ActionUpdateThread.BGT
+    }
+
+    override fun update(event: AnActionEvent) {
+        event.presentation.setEnabledAndVisible(event.project != null)
+    }
+
     override fun actionPerformed(event: AnActionEvent) {
         val project = event.project ?: return
 
