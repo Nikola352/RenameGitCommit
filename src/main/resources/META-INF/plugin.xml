@@ -29,4 +29,15 @@
 
     </extensions>
 
+    <actions>
+        <action id="RenameCurrentCommit"
+                class="com.jetbrains.internship.rename_git_commit.RenameCommitAction"
+                text="Rename Current Commit"
+                description="Renames the latest commit message"
+                >
+            <add-to-group group-id="Git.MainMenu" />
+        </action>
+    </actions>
+
+
 </idea-plugin>
