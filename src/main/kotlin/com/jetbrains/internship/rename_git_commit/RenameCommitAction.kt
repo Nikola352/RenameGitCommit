@@ -11,6 +11,15 @@ import com.intellij.util.concurrency.annotations.RequiresEdt
 import git4idea.repo.GitRepository
 import javax.swing.SwingUtilities
 
+/**
+ * An IntelliJ action that allows renaming the most recent Git commit in the current repository.
+ *
+ * This action performs several steps:
+ * 1. Retrieves the current Git repository
+ * 2. Gets the message from the last commit
+ * 3. Shows a dialog to edit the commit message
+ * 4. Performs the commit amend operation with the new message
+ */
 class RenameCommitAction : AnAction() {
 
     override fun getActionUpdateThread(): ActionUpdateThread {

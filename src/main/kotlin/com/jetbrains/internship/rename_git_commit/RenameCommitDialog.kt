@@ -12,7 +12,12 @@ import java.awt.Dimension
 import javax.swing.*
 import javax.swing.border.CompoundBorder
 
-
+/**
+ * Dialog for renaming a Git commit message.
+ *
+ * @param project The current project
+ * @param lastCommitMessage The current commit message to edit
+ */
 class RenameCommitDialog(project: Project, lastCommitMessage: String) : DialogWrapper(project) {
 
     companion object {
@@ -114,6 +119,11 @@ class RenameCommitDialog(project: Project, lastCommitMessage: String) : DialogWr
         }
     }
 
+    /**
+     * Shows the dialog and returns the new commit message if accepted.
+     *
+     * @return The new commit message if dialog was confirmed, null otherwise
+     */
     fun showAndGetMessage(): String? {
         return if (showAndGet()) textArea.text.trim() else null
     }
