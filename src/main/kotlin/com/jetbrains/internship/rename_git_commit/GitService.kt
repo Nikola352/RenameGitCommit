@@ -17,26 +17,24 @@ import git4idea.repo.GitRepositoryManager
  * - Rename the last commit
  */
 @Service(Service.Level.PROJECT)
-class GitService {
+class GitService(private val project: Project) {
 
     /**
     * Gets the first available Git repository for the project.
     *
-    * @param project The current project
     * @return The Git repository or null if none found
     */
-    fun getRepository(project: Project): GitRepository? {
+    fun getRepository(): GitRepository? {
         return GitRepositoryManager.getInstance(project).repositories.firstOrNull()
     }
 
     /**
      * Gets the message from the last commit in the repository.
      *
-     * @param project The current project
      * @param repository The Git repository to query
      * @return The last commit message or null if not available
      */
-    fun getLastCommitMessage(project: Project, repository: GitRepository): String? {
+    fun getLastCommitMessage(repository: GitRepository): String? {
         val handler = GitLineHandler(project, repository.root, GitCommand.LOG).apply {
             addParameters("-1", "--pretty=%B")
             setStdoutSuppressed(false)
@@ -51,12 +49,11 @@ class GitService {
     /**
      * Renames the last commit in the repository with a new message.
      *
-     * @param project The current project
      * @param repository The Git repository to modify
      * @param newMessage The new commit message
      * @throws Exception if the Git operation fails
      */
-    fun renameLastCommit(project: Project, repository: GitRepository, newMessage: String) {
+    fun renameLastCommit(repository: GitRepository, newMessage: String) {
         if (newMessage.isBlank()) return
 
         val handler = GitLineHandler(project, repository.root, GitCommand.COMMIT).apply {

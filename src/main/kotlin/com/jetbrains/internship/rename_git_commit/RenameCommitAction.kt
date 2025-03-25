@@ -40,14 +40,14 @@ class RenameCommitAction : AnAction() {
             override fun run(indicator: com.intellij.openapi.progress.ProgressIndicator) {
                 try {
                     val gitService = project.getService(GitService::class.java)
-                    repository = gitService.getRepository(project)
+                    repository = gitService.getRepository()
 
                     if (repository == null) {
                         showErrorOnEdt(project, "No Git repository found.")
                         return
                     }
 
-                    lastCommitMessage = gitService.getLastCommitMessage(project, repository!!)
+                    lastCommitMessage = gitService.getLastCommitMessage(repository!!)
 
                     if (lastCommitMessage == null) {
                         showErrorOnEdt(project, "Could not retrieve last commit message.")
@@ -73,7 +73,7 @@ class RenameCommitAction : AnAction() {
                 override fun run(indicator: com.intellij.openapi.progress.ProgressIndicator) {
                     try {
                         val gitService = project.getService(GitService::class.java)
-                        gitService.renameLastCommit(project, repository, newMessage)
+                        gitService.renameLastCommit(repository, newMessage)
                         showInfoOnEdt(project, "Commit message updated successfully")
                     } catch (e: Exception) {
                         showErrorOnEdt(project, "Error renaming commit: ${e.message}")
