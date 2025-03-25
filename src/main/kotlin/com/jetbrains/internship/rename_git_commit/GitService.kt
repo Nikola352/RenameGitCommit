@@ -7,7 +7,6 @@ import git4idea.commands.GitCommand
 import git4idea.commands.GitLineHandler
 import git4idea.repo.GitRepository
 import git4idea.repo.GitRepositoryManager
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -27,8 +26,8 @@ class GitService(private val project: Project) {
     *
     * @return The Git repository or null if none found
     */
-    suspend fun getRepository(): GitRepository? = withContext(Dispatchers.IO) {
-        GitRepositoryManager.getInstance(project).repositories.firstOrNull()
+    fun getRepository(): GitRepository? {
+        return GitRepositoryManager.getInstance(project).repositories.firstOrNull()
     }
 
     /**
@@ -37,16 +36,18 @@ class GitService(private val project: Project) {
      * @param repository The Git repository to query
      * @return The last commit message or null if not available
      */
-    suspend fun getLastCommitMessage(repository: GitRepository): String? = withContext(Dispatchers.IO) {
+    suspend fun getLastCommitMessage(repository: GitRepository): String? {
         val handler = GitLineHandler(project, repository.root, GitCommand.LOG).apply {
             addParameters("-1", "--pretty=%B")
             setStdoutSuppressed(false)
         }
 
-        Git.getInstance().runCommand(handler)
-            .getOutputOrThrow()
-            .trim()
-            .takeIf { it.isNotEmpty() }
+        return withContext(Dispatchers.IO) {
+            Git.getInstance()
+                .runCommand(handler)
+                .getOutputOrThrow()
+                .trim().takeIf { it.isNotEmpty() }
+        }
     }
 
     /**
@@ -56,15 +57,17 @@ class GitService(private val project: Project) {
      * @param newMessage The new commit message
      * @throws Exception if the Git operation fails
      */
-    suspend fun renameLastCommit(repository: GitRepository, newMessage: String) = withContext(Dispatchers.IO) {
-        if (newMessage.isBlank()) return@withContext
+    suspend fun renameLastCommit(repository: GitRepository, newMessage: String) {
+        if (newMessage.isBlank()) return
 
         val handler = GitLineHandler(project, repository.root, GitCommand.COMMIT).apply {
             addParameters("--amend", "-m", newMessage)
             setStdoutSuppressed(false)
         }
 
-        Git.getInstance().runCommand(handler).throwOnError()
-        repository.update()
+        withContext(Dispatchers.IO) {
+            Git.getInstance().runCommand(handler).throwOnError()
+            repository.update()
+        }
     }
 }
