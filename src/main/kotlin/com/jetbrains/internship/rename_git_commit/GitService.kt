@@ -7,6 +7,9 @@ import git4idea.commands.GitCommand
 import git4idea.commands.GitLineHandler
 import git4idea.repo.GitRepository
 import git4idea.repo.GitRepositoryManager
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * Service for performing Git operations related to commit renaming.
@@ -24,8 +27,8 @@ class GitService(private val project: Project) {
     *
     * @return The Git repository or null if none found
     */
-    fun getRepository(): GitRepository? {
-        return GitRepositoryManager.getInstance(project).repositories.firstOrNull()
+    suspend fun getRepository(): GitRepository? = withContext(Dispatchers.IO) {
+        GitRepositoryManager.getInstance(project).repositories.firstOrNull()
     }
 
     /**
@@ -34,13 +37,13 @@ class GitService(private val project: Project) {
      * @param repository The Git repository to query
      * @return The last commit message or null if not available
      */
-    fun getLastCommitMessage(repository: GitRepository): String? {
+    suspend fun getLastCommitMessage(repository: GitRepository): String? = withContext(Dispatchers.IO) {
         val handler = GitLineHandler(project, repository.root, GitCommand.LOG).apply {
             addParameters("-1", "--pretty=%B")
             setStdoutSuppressed(false)
         }
 
-        return Git.getInstance().runCommand(handler)
+        Git.getInstance().runCommand(handler)
             .getOutputOrThrow()
             .trim()
             .takeIf { it.isNotEmpty() }
@@ -53,8 +56,8 @@ class GitService(private val project: Project) {
      * @param newMessage The new commit message
      * @throws Exception if the Git operation fails
      */
-    fun renameLastCommit(repository: GitRepository, newMessage: String) {
-        if (newMessage.isBlank()) return
+    suspend fun renameLastCommit(repository: GitRepository, newMessage: String) = withContext(Dispatchers.IO) {
+        if (newMessage.isBlank()) return@withContext
 
         val handler = GitLineHandler(project, repository.root, GitCommand.COMMIT).apply {
             addParameters("--amend", "-m", newMessage)

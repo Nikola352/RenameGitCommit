@@ -3,13 +3,11 @@ package com.jetbrains.internship.rename_git_commit
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.progress.ProgressManager
-import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
-import com.intellij.util.concurrency.annotations.RequiresEdt
-import git4idea.repo.GitRepository
-import javax.swing.SwingUtilities
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 /**
  * An IntelliJ action that allows renaming the most recent Git commit in the current repository.
@@ -33,65 +31,40 @@ class RenameCommitAction : AnAction() {
     override fun actionPerformed(event: AnActionEvent) {
         val project = event.project ?: return
 
-        ProgressManager.getInstance().run(object : Task.Backgroundable(project, "Renaming git commit", true) {
-            private var repository: GitRepository? = null
-            private var lastCommitMessage: String? = null
+        CoroutineScope(Dispatchers.Main).launch {
+            try {
+                val gitService = project.getService(GitService::class.java)
+                val repository = gitService.getRepository()
 
-            override fun run(indicator: com.intellij.openapi.progress.ProgressIndicator) {
-                try {
-                    val gitService = project.getService(GitService::class.java)
-                    repository = gitService.getRepository()
-
-                    if (repository == null) {
-                        showErrorOnEdt(project, "No Git repository found.")
-                        return
-                    }
-
-                    lastCommitMessage = gitService.getLastCommitMessage(repository!!)
-
-                    if (lastCommitMessage == null) {
-                        showErrorOnEdt(project, "Could not retrieve last commit message.")
-                        return
-                    }
-
-                    SwingUtilities.invokeLater {
-                        showRenameDialog(project, repository!!, lastCommitMessage!!)
-                    }
-                } catch (e: Exception) {
-                    showErrorOnEdt(project, "Error: ${e.message}")
+                if (repository == null) {
+                    showError(project, "No Git repository found.")
+                    return@launch
                 }
-            }
-        })
-    }
 
-    @RequiresEdt
-    private fun showRenameDialog(project: Project, repository: GitRepository, message: String) {
-        val newMessage = RenameCommitDialog(project, message).showAndGetMessage()
+                val lastCommitMessage = gitService.getLastCommitMessage(repository)
 
-        if (!newMessage.isNullOrBlank()) {
-            ProgressManager.getInstance().run(object : Task.Backgroundable(project, "Renaming commit", true) {
-                override fun run(indicator: com.intellij.openapi.progress.ProgressIndicator) {
+                if (lastCommitMessage == null) {
+                    showError(project, "Could not retrieve last commit message.")
+                    return@launch
+                }
+
+                val newMessage = RenameCommitDialog(project, lastCommitMessage).showAndGetMessage()
+
+                if (!newMessage.isNullOrBlank()) {
                     try {
-                        val gitService = project.getService(GitService::class.java)
                         gitService.renameLastCommit(repository, newMessage)
-                        showInfoOnEdt(project, "Commit message updated successfully")
+                        Messages.showInfoMessage(project, "Commit message updated successfully", "Success")
                     } catch (e: Exception) {
-                        showErrorOnEdt(project, "Error renaming commit: ${e.message}")
+                        showError(project, "Error renaming commit: ${e.message}")
                     }
                 }
-            })
+            } catch (e: Exception) {
+                showError(project, "Error: ${e.message}")
+            }
         }
     }
 
-    private fun showErrorOnEdt(project: Project, message: String) {
-        SwingUtilities.invokeLater {
-            Messages.showErrorDialog(project, message, "Error")
-        }
-    }
-
-    private fun showInfoOnEdt(project: Project, message: String) {
-        SwingUtilities.invokeLater {
-            Messages.showInfoMessage(project, message, "Success")
-        }
+    private fun showError(project: Project, message: String) {
+        Messages.showErrorDialog(project, message, "Error")
     }
 }
